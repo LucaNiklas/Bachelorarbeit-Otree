@@ -69,35 +69,37 @@
 
 {% block scripts %}
 <script>
-  const redSuits = ['♥', '♦'];
+  var redSuits = ['♥', '♦'];
 
-  let balanceEl, betValueEl, playerCardsEl, playerValueEl, dealerCardsEl, dealerValueEl, statusEl, hitBtn, standBtn, doubleBtn, nextWrapper, nextBtn;
-  let initialPlayerCards = [], initialDealerCards = [], dealerUpcard;
+  var balanceEl, betValueEl, playerCardsEl, playerValueEl, dealerCardsEl, dealerValueEl, statusEl, hitBtn, standBtn, doubleBtn, nextWrapper, nextBtn;
+  var initialPlayerCards = [], initialDealerCards = [], dealerUpcard;
 
   function createCardHTML(card){
-    const rank = card.slice(0, -1);
-    const suit = card.slice(-1);
-    const isRed = redSuits.includes(suit);
-    return `
-      <div class="bj-card${isRed ? ' bj-card--red' : ''}" data-suit="${suit}">
-        <div class="bj-card__corner">
-          <span class="bj-card__rank">${rank}</span>
-          <span class="bj-card__corner-suit">${suit}</span>
-        </div>
-        <div class="bj-card__corner bj-card__corner--bottom">
-          <span class="bj-card__rank">${rank}</span>
-          <span class="bj-card__corner-suit">${suit}</span>
-        </div>
-      </div>`;
+    var rank = card.slice(0, -1);
+    var suit = card.slice(-1);
+    var isRed = redSuits.indexOf(suit) !== -1;
+    var cardClass = 'bj-card' + (isRed ? ' bj-card--red' : '');
+    return '<div class="' + cardClass + '" data-suit="' + suit + '">' +
+      '<div class="bj-card__corner">' +
+        '<span class="bj-card__rank">' + rank + '</span>' +
+        '<span class="bj-card__corner-suit">' + suit + '</span>' +
+      '</div>' +
+      '<div class="bj-card__corner bj-card__corner--bottom">' +
+        '<span class="bj-card__rank">' + rank + '</span>' +
+        '<span class="bj-card__corner-suit">' + suit + '</span>' +
+      '</div>' +
+    '</div>';
   }
 
   function createHiddenCardHTML(){
     return '<div class="bj-card bj-card--back"></div>';
   }
 
-  function renderCards(container, cards, {hideHole=false}={}){
+  function renderCards(container, cards, options){
     if(!container) return;
-    let html = cards.map(createCardHTML).join('');
+    var settings = options || {};
+    var hideHole = !!settings.hideHole;
+    var html = cards.map(createCardHTML).join('');
     if(hideHole) html += createHiddenCardHTML();
     container.innerHTML = html;
   }
@@ -134,22 +136,24 @@
     if(!data || typeof data!=='object' || Array.isArray(data)) return data;
     if('balance_display' in data || 'player_hand' in data || 'dealer_hand' in data ||
        'dealer_upcard' in data || 'done' in data || 'error' in data) return data;
-    const keys = Object.keys(data);
-    if(keys.length===1 && typeof data[keys[0]]==='object') return normalizePayload(data[keys[0]]);
+    var keys = Object.keys(data);
+    if(keys.length === 1 && typeof data[keys[0]] === 'object') return normalizePayload(data[keys[0]]);
     return data;
   }
 
   function send(action){
-    if(action==null) return;
-    liveSend({ action });
+    if(action == null) return;
+    liveSend({ action: action });
   }
 
-  // oTree ruft das auf
   function liveRecv(data){
-    const payload = normalizePayload(data);
+    var payload = normalizePayload(data);
     if(!payload || !balanceEl) return;
 
-    if(payload.error){ statusEl.textContent = payload.error; return; }
+    if(payload.error){
+      statusEl.textContent = payload.error;
+      return;
+    }
     if(payload.balance_display !== undefined){ balanceEl.textContent = payload.balance_display; }
     if(payload.bet_display !== undefined && betValueEl){ betValueEl.textContent = payload.bet_display; }
     if(Array.isArray(payload.player_hand)){ renderCards(playerCardsEl, payload.player_hand); }
@@ -160,16 +164,18 @@
 
     if(payload.done){
       setButtonsDisabled(true);
-      statusEl.innerHTML = '<strong>Result:</strong> ' + (payload.outcome || '') +
-        (payload.payoff_display ? ' (Payout: ' + payload.payoff_display + ')' : '');
-      if(nextWrapper){ nextWrapper.style.display = 'flex'; nextBtn && nextBtn.focus(); }
-      setTimeout(()=>{ nextBtn && nextBtn.click(); },150);
+      statusEl.textContent = '';
+      if(nextWrapper){
+        nextWrapper.style.display = 'flex';
+        if(nextBtn){ nextBtn.focus(); }
+      }
+      setTimeout(function(){ if(nextBtn){ nextBtn.click(); } }, 150);
     } else if(nextWrapper){
       nextWrapper.style.display = 'none';
     }
   }
 
-  document.addEventListener('DOMContentLoaded', ()=>{
+  document.addEventListener('DOMContentLoaded', function(){
     balanceEl = document.getElementById('balance');
     betValueEl = document.getElementById('bet-value');
     playerCardsEl = document.getElementById('player-cards');
@@ -183,21 +189,45 @@
     nextWrapper = document.getElementById('next-wrapper');
     nextBtn = nextWrapper ? nextWrapper.querySelector('button') : null;
 
-    if(playerCardsEl?.dataset.cards){ initialPlayerCards = JSON.parse(playerCardsEl.dataset.cards); }
-    if(dealerCardsEl?.dataset.cards){ initialDealerCards = JSON.parse(dealerCardsEl.dataset.cards); dealerUpcard = dealerCardsEl.dataset.upcard; }
+    if(playerCardsEl && playerCardsEl.dataset.cards){
+      try {
+        initialPlayerCards = JSON.parse(playerCardsEl.dataset.cards);
+      } catch (err) {
+        initialPlayerCards = [];
+      }
+    }
+    if(dealerCardsEl && dealerCardsEl.dataset.cards){
+      try {
+        initialDealerCards = JSON.parse(dealerCardsEl.dataset.cards);
+      } catch (err) {
+        initialDealerCards = [];
+      }
+      dealerUpcard = dealerCardsEl.dataset.upcard;
+    }
 
-    if(doubleBtn){ doubleBtn.dataset.disabled = doubleBtn.disabled.toString(); }
+    if(doubleBtn){
+      doubleBtn.dataset.disabled = doubleBtn.disabled.toString();
+    }
 
     renderCards(playerCardsEl, initialPlayerCards);
-    if(dealerUpcard){ renderCards(dealerCardsEl, [dealerUpcard], { hideHole:true }); }
-    else { renderCards(dealerCardsEl, initialDealerCards); }
+    if(dealerUpcard){
+      renderCards(dealerCardsEl, [dealerUpcard], { hideHole: true });
+    } else {
+      renderCards(dealerCardsEl, initialDealerCards);
+    }
     if (dealerValueEl) {
       dealerValueEl.textContent = 'Value: ?';
     }
 
-    hitBtn?.addEventListener('click', ()=>send('hit'));
-    standBtn?.addEventListener('click', ()=>send('stand'));
-    doubleBtn?.addEventListener('click', ()=>send('double'));
+    if(hitBtn){
+      hitBtn.addEventListener('click', function(){ send('hit'); });
+    }
+    if(standBtn){
+      standBtn.addEventListener('click', function(){ send('stand'); });
+    }
+    if(doubleBtn){
+      doubleBtn.addEventListener('click', function(){ send('double'); });
+    }
 
     send('status');
   });
