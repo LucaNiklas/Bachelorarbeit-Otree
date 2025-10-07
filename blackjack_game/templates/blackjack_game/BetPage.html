@@ -13,7 +13,7 @@
   <h3>Choose your bet:</h3>
 
   {% if show_bet_intro %}
-    <p>Choose your stake for this round. You have a starting balance of {{ start_balance_display }} points. If you lose this balance before the end of the {{ total_rounds }} rounds, you will be dropped out of the game at that point.</p>
+    <p>Choose your stake for this round. You have a starting balance of {{ start_balance_display }} points. If you lose this balance before the end of the {{ total_rounds }} rounds, you will be eliminated from the game.</p>
   {% endif %}
 
   {{ formfield 'bet_size' label="" }}
