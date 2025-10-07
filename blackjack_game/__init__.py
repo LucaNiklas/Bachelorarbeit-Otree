@@ -204,7 +204,8 @@ class Player(BasePlayer):
 
         if total >= 21:
             return {'stand'}
-
+        
+        # soft totals
         if is_soft:
             if total >= 20:
                 return {'stand'}
@@ -298,7 +299,6 @@ class Player(BasePlayer):
         self.bankroll_after_round = self.balance
         self.participant.vars.pop(f'decision_start_{self.round_number}', None)
 
-        # Einsatz vom Guthaben abziehen (kommt vom Slider)
         self.balance -= self.bet_size
 
         if self.is_blackjack(player) or self.is_blackjack(dealer):
@@ -436,7 +436,6 @@ class BetPage(Page):
 class Decision(Page):
     @staticmethod
     def is_displayed(player: Player):
-        # Seite nur anzeigen, solange Spieler noch aktiv ist
         return (
             player.round_number <= player.summary_round()
             and not player.player_stood
@@ -554,6 +553,15 @@ class Decision(Page):
 
         return {player.id_in_group: dict()}
 
+    def post(self):
+        action = self.request.POST.get('decision')
+        if not action:
+            return super().post()
+        resp = Decision.live_method(self.player, {'action': action})
+        payload = resp.get(self.player.id_in_group, {})
+        if payload.get('done'):
+            return super().post()
+        return self.get()
 
 class Dealer(Page):
     @staticmethod
