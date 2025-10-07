@@ -1,0 +1,67 @@
+{% extends "global/Page.html" %}
+{% load otree %}
+
+{% block styles %}
+<style>
+    body { background-color: #f5f7fb; }
+    .transition-wrapper {
+        max-width: 640px;
+        margin: 0 auto;
+        padding: 64px 16px 80px;
+        text-align: center;
+    }
+    .transition-card {
+        background: #ffffff;
+        border-radius: 20px;
+        padding: 48px 32px;
+        box-shadow: 0 18px 36px rgba(15, 23, 42, 0.12);
+    }
+    .transition-card h2 {
+        font-size: 28px;
+        font-weight: 600;
+        color: #1f2933;
+        margin-bottom: 16px;
+    }
+    .transition-card p {
+        font-size: 16px;
+        color: #6b7280;
+        line-height: 1.7;
+        margin-bottom: 32px;
+    }
+    .next-wrapper {
+        display: flex;
+        justify-content: center;
+    }
+    .next-wrapper button,
+    .next-wrapper input[type=submit] {
+        background: linear-gradient(120deg, #6366f1, #14b8a6);
+        border: none;
+        color: white;
+        font-weight: 600;
+        padding: 14px 28px;
+        border-radius: 12px;
+        box-shadow: 0 12px 30px rgba(99, 102, 241, 0.35);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .next-wrapper button:hover,
+    .next-wrapper input[type=submit]:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 18px 36px rgba(79, 70, 229, 0.4);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="transition-wrapper">
+    <div class="transition-card">
+        <h2>Thank you for completing the questionnaire!</h2>
+        <p>
+            You have finished the first part of the study. The second part will now begin:
+            you will play 10 rounds of classic Blackjack. When you are ready, click continue to proceed.
+        </p>
+        <div class="next-wrapper">
+            {{ next_button }}
+        </div>
+    </div>
+</div>
+{% endblock %}

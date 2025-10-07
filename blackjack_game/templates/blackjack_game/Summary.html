@@ -1,0 +1,93 @@
+{% extends "global/Page.html" %}
+{% load otree %}
+
+{% block styles %}
+  {{ super }}
+  {% include 'blackjack_game/includes/continue_styles.html' %}
+  <style>
+    body { background-color: #f5f7fb; }
+    .transition-wrapper {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 64px 16px 80px;
+      text-align: center;
+    }
+    .transition-card {
+      background: #ffffff;
+      border-radius: 20px;
+      padding: 48px 32px;
+      box-shadow: 0 18px 36px rgba(15, 23, 42, 0.12);
+    }
+    .transition-card h2 {
+      font-size: 28px;
+      font-weight: 600;
+      color: #1f2933;
+      margin-bottom: 16px;
+    }
+    .transition-card p {
+      font-size: 16px;
+      color: #6b7280;
+      line-height: 1.7;
+      margin-bottom: 24px;
+    }
+    .summary-stats {
+      display: grid;
+      gap: 12px;
+      margin-bottom: 32px;
+    }
+    .summary-stat {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 14px 18px;
+      border-radius: 14px;
+      background: #f5f7fb;
+    }
+    .summary-stat__label {
+      font-weight: 600;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.75rem;
+    }
+    .summary-stat__value {
+      font-weight: 600;
+      color: #1f2933;
+      font-size: 1rem;
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+  <div class="transition-wrapper">
+    <div class="transition-card">
+      <h2>Thanks for being part of this study!</h2>
+      {% if eliminated_round and eliminated_round < total_rounds %}
+        <p>You dropped out in round {{ eliminated_round }}.</p>
+      {% else %}
+        <p>You completed all {{ total_rounds }} rounds.</p>
+      {% endif %}
+
+      <div class="summary-stats">
+        <div class="summary-stat">
+          <span class="summary-stat__label">Final balance</span>
+          <span class="summary-stat__value">{{ final_balance_display }}</span>
+        </div>
+        <div class="summary-stat">
+          <span class="summary-stat__label">Net result</span>
+          <span class="summary-stat__value">
+            {% if net_result_value > 0 %}+{{ net_result_display }}{% elif net_result_value < 0 %}{{ net_result_display }}{% else %}0.00{% endif %}
+          </span>
+        </div>
+        <div class="summary-stat">
+          <span class="summary-stat__label">Rounds played</span>
+          <span class="summary-stat__value">{{ rounds_played }} / {{ total_rounds }}</span>
+        </div>
+      </div>
+
+      <div class="next-wrapper">
+        <button type="submit" class="otree-btn-next">Continue</button>
+      </div>
+    </div>
+  </div>
+{% endblock %}

@@ -1,0 +1,65 @@
+{% extends "global/Page.html" %}
+{% load otree %}
+
+{% block global_styles %}
+  {{ super }}
+  <link rel="stylesheet" href="{% static 'global/blackjack.css' %}">
+{% endblock %}
+
+{% block styles %}
+  {{ super }}
+  {% include 'blackjack_game/includes/continue_styles.html' %}
+{% endblock %}
+
+{% block content %}
+  <div class="bj-layout">
+    <div class="bj-summary">
+      <div>
+        <div class="bj-hand-label">Current balance</div>
+        <div class="bj-hand-value">{{ balance_display }}</div>
+      </div>
+      <div>
+        <div class="bj-hand-label">Bet</div>
+        <div class="bj-hand-value">{{ bet_display }}</div>
+      </div>
+      <div>
+        <div class="bj-hand-label">Payout</div>
+        <div class="bj-hand-value">{{ payoff_display }}</div>
+      </div>
+    </div>
+
+    <section class="bj-hand">
+      <div class="bj-hand__header">
+        <div class="bj-hand-label">Your hand</div>
+        <div class="bj-hand-value">Value: {{ value_player }}</div>
+      </div>
+      <div class="card-row">
+        {% for card in player_cards_meta %}
+          {% include 'includes/bj_card.html' with card=card %}
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="bj-hand">
+      <div class="bj-hand__header">
+        <div class="bj-hand-label">Dealer</div>
+        <div class="bj-hand-value">Value: {{ value_dealer }}</div>
+      </div>
+      <div class="card-row">
+        {% for card in dealer_cards_meta %}
+          {% include 'includes/bj_card.html' with card=card %}
+        {% endfor %}
+      </div>
+    </section>
+
+    {% if outcome %}
+      <div class="bj-status{% if outcome_class %} {{ outcome_class }}{% endif %}">
+        {{ outcome }}
+      </div>
+    {% endif %}
+
+    <div class="next-wrapper">
+      <button type="submit" class="otree-btn-next">Continue</button>
+    </div>
+  </div>
+{% endblock %}

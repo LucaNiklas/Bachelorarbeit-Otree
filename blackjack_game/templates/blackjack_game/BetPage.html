@@ -1,0 +1,50 @@
+{% extends "global/Page.html" %}
+{% load otree %}
+
+{% block styles %}
+  {{ super }}
+  {% include 'blackjack_game/includes/continue_styles.html' %}
+{% endblock %}
+
+{% block content %}
+  <p><strong>Current balance:</strong> {{ balance_display }}</p>
+  <hr>
+
+  <h3>Choose your bet:</h3>
+
+  {% if show_bet_intro %}
+    <p>Choose your stake for this round. You have a starting balance of {{ start_balance_display }} points. If you lose this balance before the end of the {{ total_rounds }} rounds, you will be dropped out of the game at that point.</p>
+  {% endif %}
+
+  {{ formfield 'bet_size' label="" }}
+
+  <p>Selected bet: <span id="betValue"></span></p>
+
+  <div class="next-wrapper">
+    <button type="submit" class="otree-btn-next">Continue</button>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const input = document.querySelector("input[name='bet_size']");
+      const out = document.getElementById("betValue");
+      if (input && out) {
+        out.textContent = input.value;
+        input.addEventListener("input", function () {
+          this.setCustomValidity('');
+          out.textContent = this.value;
+        });
+        input.addEventListener("invalid", function () {
+          this.setCustomValidity('Please enter a valid bet.');
+        });
+      }
+
+      document.querySelectorAll('.input-group-text').forEach(function (el) {
+        const value = el.textContent ? el.textContent.trim().toLowerCase() : '';
+        if (value === 'points' || value === 'punkte' || value === '') {
+          el.textContent = 'Points';
+        }
+      });
+    });
+  </script>
+{% endblock %}

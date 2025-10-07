@@ -1,0 +1,205 @@
+{% extends "global/Page.html" %}
+{% load otree %}
+
+{% block global_styles %}
+  {{ super }}
+  <link rel="stylesheet" href="{% static 'global/blackjack.css' %}">
+{% endblock %}
+
+{% block styles %}
+  {{ super }}
+  {% include 'blackjack_game/includes/continue_styles.html' %}
+{% endblock %}
+
+{% block content %}
+  <div class="bj-layout">
+    <div class="bj-summary">
+      <div>
+        <div class="bj-hand-label">Current balance</div>
+        <div class="bj-hand-value" id="balance">{{ balance_display }}</div>
+      </div>
+      <div>
+        <div class="bj-hand-label">Bet</div>
+        <div class="bj-hand-value" id="bet-value">{{ bet_display }}</div>
+      </div>
+      <div class="bj-round-counter">Round: {{ round_number }} / {{ total_rounds }}</div>
+    </div>
+
+    <section class="bj-hand">
+      <div class="bj-hand__header">
+        <div class="bj-hand-label">Your hand</div>
+        <div class="bj-hand-meta">
+          <div class="bj-hand-value" id="player-value">Value: {{ value_player }}</div>
+        </div>
+      </div>
+      <div class="card-row" id="player-cards" data-cards='{{ player_hand_json|safe }}'>
+        {% for card in player_cards_meta %}
+          {% include 'includes/bj_card.html' with card=card %}
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="bj-hand">
+      <div class="bj-hand__header">
+        <div class="bj-hand-label">Dealer</div>
+        <div class="bj-hand-meta">
+          <div class="bj-hand-value" id="dealer-value">Value: ?</div>
+        </div>
+      </div>
+      <div class="card-row" id="dealer-cards" data-cards='{{ dealer_hand_json|safe }}' data-upcard="{{ dealer_upcard }}">
+        {% for card in dealer_cards_meta_initial %}
+          {% include 'includes/bj_card.html' with card=card %}
+        {% endfor %}
+      </div>
+    </section>
+
+    <div id="status" class="bj-status"></div>
+
+    <div class="bj-actions" role="group">
+      <button id="hit-btn" type="button" class="bj-btn bj-btn--hit">Hit</button>
+      <button id="stand-btn" type="button" class="bj-btn bj-btn--stand">Stand</button>
+      <button id="double-btn" type="button" class="bj-btn bj-btn--double" {% if not can_double %}disabled{% endif %}>Double</button>
+    </div>
+
+    <div id="next-wrapper" class="next-wrapper" style="display: none;">
+      <button type="submit" class="otree-btn-next">Continue</button>
+    </div>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const redSuits = ['♥', '♦'];
+
+  let balanceEl, betValueEl, playerCardsEl, playerValueEl, dealerCardsEl, dealerValueEl, statusEl, hitBtn, standBtn, doubleBtn, nextWrapper, nextBtn;
+  let initialPlayerCards = [], initialDealerCards = [], dealerUpcard;
+
+  function createCardHTML(card){
+    const rank = card.slice(0, -1);
+    const suit = card.slice(-1);
+    const isRed = redSuits.includes(suit);
+    return `
+      <div class="bj-card${isRed ? ' bj-card--red' : ''}" data-suit="${suit}">
+        <div class="bj-card__corner">
+          <span class="bj-card__rank">${rank}</span>
+          <span class="bj-card__corner-suit">${suit}</span>
+        </div>
+        <div class="bj-card__corner bj-card__corner--bottom">
+          <span class="bj-card__rank">${rank}</span>
+          <span class="bj-card__corner-suit">${suit}</span>
+        </div>
+      </div>`;
+  }
+
+  function createHiddenCardHTML(){
+    return '<div class="bj-card bj-card--back"></div>';
+  }
+
+  function renderCards(container, cards, {hideHole=false}={}){
+    if(!container) return;
+    let html = cards.map(createCardHTML).join('');
+    if(hideHole) html += createHiddenCardHTML();
+    container.innerHTML = html;
+  }
+
+  function updateDealerView(data){
+    if (data.dealer_hand) {
+      renderCards(dealerCardsEl, data.dealer_hand);
+    } else if (data.dealer_upcard) {
+      renderCards(dealerCardsEl, [data.dealer_upcard], { hideHole: true });
+    }
+    if (dealerValueEl) {
+      if (data.value_dealer !== undefined) {
+        dealerValueEl.textContent = 'Value: ' + data.value_dealer;
+      } else if (data.dealer_hand || data.dealer_upcard) {
+        dealerValueEl.textContent = 'Value: ?';
+      }
+    }
+  }
+
+  function setButtonsDisabled(disabled){
+    if (hitBtn) hitBtn.disabled = disabled;
+    if (standBtn) standBtn.disabled = disabled;
+    if (doubleBtn) doubleBtn.disabled = disabled || doubleBtn.dataset.disabled === 'true';
+  }
+
+  function updateButtons(canDouble){
+    if (doubleBtn){
+      doubleBtn.disabled = !canDouble;
+      doubleBtn.dataset.disabled = (!canDouble).toString();
+    }
+  }
+
+  function normalizePayload(data){
+    if(!data || typeof data!=='object' || Array.isArray(data)) return data;
+    if('balance_display' in data || 'player_hand' in data || 'dealer_hand' in data ||
+       'dealer_upcard' in data || 'done' in data || 'error' in data) return data;
+    const keys = Object.keys(data);
+    if(keys.length===1 && typeof data[keys[0]]==='object') return normalizePayload(data[keys[0]]);
+    return data;
+  }
+
+  function send(action){
+    if(action==null) return;
+    liveSend({ action });
+  }
+
+  // oTree ruft das auf
+  function liveRecv(data){
+    const payload = normalizePayload(data);
+    if(!payload || !balanceEl) return;
+
+    if(payload.error){ statusEl.textContent = payload.error; return; }
+    if(payload.balance_display !== undefined){ balanceEl.textContent = payload.balance_display; }
+    if(payload.bet_display !== undefined && betValueEl){ betValueEl.textContent = payload.bet_display; }
+    if(Array.isArray(payload.player_hand)){ renderCards(playerCardsEl, payload.player_hand); }
+    if(payload.value_player !== undefined){ playerValueEl.textContent = 'Value: ' + payload.value_player; }
+
+    updateDealerView(payload);
+    if(payload.can_double !== undefined) updateButtons(payload.can_double);
+
+    if(payload.done){
+      setButtonsDisabled(true);
+      statusEl.innerHTML = '<strong>Result:</strong> ' + (payload.outcome || '') +
+        (payload.payoff_display ? ' (Payout: ' + payload.payoff_display + ')' : '');
+      if(nextWrapper){ nextWrapper.style.display = 'flex'; nextBtn && nextBtn.focus(); }
+      setTimeout(()=>{ nextBtn && nextBtn.click(); },150);
+    } else if(nextWrapper){
+      nextWrapper.style.display = 'none';
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', ()=>{
+    balanceEl = document.getElementById('balance');
+    betValueEl = document.getElementById('bet-value');
+    playerCardsEl = document.getElementById('player-cards');
+    playerValueEl = document.getElementById('player-value');
+    dealerCardsEl = document.getElementById('dealer-cards');
+    dealerValueEl = document.getElementById('dealer-value');
+    statusEl = document.getElementById('status');
+    hitBtn = document.getElementById('hit-btn');
+    standBtn = document.getElementById('stand-btn');
+    doubleBtn = document.getElementById('double-btn');
+    nextWrapper = document.getElementById('next-wrapper');
+    nextBtn = nextWrapper ? nextWrapper.querySelector('button') : null;
+
+    if(playerCardsEl?.dataset.cards){ initialPlayerCards = JSON.parse(playerCardsEl.dataset.cards); }
+    if(dealerCardsEl?.dataset.cards){ initialDealerCards = JSON.parse(dealerCardsEl.dataset.cards); dealerUpcard = dealerCardsEl.dataset.upcard; }
+
+    if(doubleBtn){ doubleBtn.dataset.disabled = doubleBtn.disabled.toString(); }
+
+    renderCards(playerCardsEl, initialPlayerCards);
+    if(dealerUpcard){ renderCards(dealerCardsEl, [dealerUpcard], { hideHole:true }); }
+    else { renderCards(dealerCardsEl, initialDealerCards); }
+    if (dealerValueEl) {
+      dealerValueEl.textContent = 'Value: ?';
+    }
+
+    hitBtn?.addEventListener('click', ()=>send('hit'));
+    standBtn?.addEventListener('click', ()=>send('stand'));
+    doubleBtn?.addEventListener('click', ()=>send('double'));
+
+    send('status');
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,118 @@
+{% extends "global/Page.html" %}
+{% load otree %}
+
+{% block styles %}
+<style>
+    body { background-color: #f5f7fb; }
+    .demo-wrapper {
+        max-width: 640px;
+        margin: 0 auto;
+        padding: 56px 16px 72px;
+    }
+    .demo-card {
+        background: #ffffff;
+        border-radius: 20px;
+        padding: 40px 36px;
+        box-shadow: 0 20px 36px rgba(15, 23, 42, 0.12);
+    }
+    .demo-card h2 {
+        font-size: 26px;
+        font-weight: 600;
+        color: #1f2933;
+        margin-bottom: 18px;
+        text-align: center;
+    }
+    .demo-card p {
+        font-size: 16px;
+        color: #4b5563;
+        line-height: 1.6;
+        margin-bottom: 24px;
+        text-align: center;
+    }
+    .form-group { margin-bottom: 18px; }
+    .form-group label { font-weight: 600; color: #374151; margin-bottom: 6px; display: block; }
+    .form-group input,
+    .form-group select {
+        width: 100%;
+        padding: 12px 14px;
+        border: 1px solid #d1d5db;
+        border-radius: 12px;
+        font-size: 15px;
+        color: #1f2933;
+        background-color: #fff;
+    }
+    .form-group input:focus,
+    .form-group select:focus {
+        outline: none;
+        border-color: #6366f1;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+    }
+    .next-wrapper {
+        display: flex;
+        justify-content: center;
+        margin-top: 24px;
+    }
+    .next-wrapper button,
+    .next-wrapper input[type=submit] {
+        background: linear-gradient(120deg, #6366f1, #14b8a6);
+        border: none;
+        color: #ffffff;
+        font-weight: 600;
+        padding: 14px 28px;
+        border-radius: 12px;
+        box-shadow: 0 12px 30px rgba(99, 102, 241, 0.35);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .next-wrapper button:hover,
+    .next-wrapper input[type=submit]:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 18px 36px rgba(79, 70, 229, 0.4);
+    }
+</style>
+{% endblock %}
+
+{% block title %}{% endblock %}
+
+{% block content %}
+<div class="demo-wrapper">
+    <div class="demo-card">
+        <h2>General Questions</h2>
+        <p>Before we get started, please answer three brief questions about yourself.</p>
+
+        <div class="form-group">
+            <label for="id_age">Age</label>
+            <input id="id_age" type="number" name="age" min="16" max="99" required>
+        </div>
+
+        <div class="form-group">
+            <label for="id_gender">Gender</label>
+            <select id="id_gender" name="gender" required>
+                <option value="" selected disabled>Select an option</option>
+                <option value="Female">Female</option>
+                <option value="Male">Male</option>
+                <option value="Divers">Divers</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="id_education">Highest level of education</label>
+            <select id="id_education" name="education" required>
+                <option value="" selected disabled>Select an option</option>
+                <option value="No formal education">No formal education</option>
+                <option value="Lower secondary school (Hauptschule)">Lower secondary school (Hauptschule)</option>
+                <option value="Intermediate secondary school (Realschule / Mittlere Reife)">Intermediate secondary school (Realschule / Mittlere Reife)</option>
+                <option value="Upper secondary school (Abitur / Gymnasium)">Upper secondary school (Abitur / Gymnasium)</option>
+                <option value="Vocational training / apprenticeship (Ausbildung)">Vocational training / apprenticeship (Ausbildung)</option>
+                <option value="Bachelor’s degree">Bachelor’s degree</option>
+                <option value="Master’s degree">Master’s degree</option>
+                <option value="Doctorate / PhD">Doctorate / PhD</option>
+                <option value="Other">Other</option>
+            </select>
+        </div>
+
+        <div class="next-wrapper">
+            {{ next_button }}
+        </div>
+    </div>
+</div>
+{% endblock %}

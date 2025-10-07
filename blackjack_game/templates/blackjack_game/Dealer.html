@@ -1,0 +1,19 @@
+{% extends "global/Page.html" %}
+{% load otree %}
+
+{% block styles %}
+  {{ super }}
+  {% include 'blackjack_game/includes/continue_styles.html' %}
+{% endblock %}
+
+{% block content %}
+  <p><strong>Current balance:</strong> {{ balance_display }}</p>
+  <hr>
+
+  <h3>The dealer draws cards...</h3>
+  <p><strong>Dealer hand:</strong> {{ dealer_hand }} (Value: {{ value_dealer }})</p>
+
+  <div class="next-wrapper">
+    <button type="submit" class="otree-btn-next">Continue</button>
+  </div>
+{% endblock %}

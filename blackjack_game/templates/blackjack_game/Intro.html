@@ -1,0 +1,48 @@
+{% extends "global/Page.html" %}
+{% load otree %}
+
+{% block styles %}
+  {{ super }}
+  {% include 'blackjack_game/includes/continue_styles.html' %}
+  <style>
+    .bj-rules-box {
+      border: 2px solid #111111;
+      border-radius: 16px;
+      padding: 20px 22px;
+      margin-top: 16px;
+      background: #ffffff;
+    }
+    .bj-rules-box > ul {
+      margin-bottom: 0;
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+  <h2>Blackjack – Game Rules</h2>
+  <div class="bj-rules-box">
+  <ul>
+    <li>Your goal is to get as close as possible to 21 points without going over.</li>
+    <li>Number cards count at face value, face cards (J, Q, K) count 10, and Aces count as 1 or 11.</li>
+    <li>You start with two cards; the dealer also gets two, one of which is face down.</li>
+    <li>
+      You can choose to:
+      <ul>
+        <li>Hit – draw another card</li>
+        <li>Stand – keep your current hand</li>
+        <li>Double – double your bet and receive one final card</li>
+      </ul>
+    </li>
+    <li>If your total exceeds 21, you bust and lose immediately.</li>
+    <li>After your turn, the dealer reveals their hidden card and draws until reaching 17 or more.</li>
+    <li>A Blackjack (Ace + 10-value card) beats all other hands.</li>
+    <li>A regular win pays an amount equal to your bet.</li>
+    <li>A Blackjack pays 3 to 2.</li>
+    <li>If you and the dealer have the same total, it’s a push (no win or loss).</li>
+  </ul>
+  </div>
+
+  <div class="next-wrapper">
+    <button type="submit" class="otree-btn-next">Continue</button>
+  </div>
+{% endblock %}

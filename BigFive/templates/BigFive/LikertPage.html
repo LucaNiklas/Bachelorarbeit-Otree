@@ -1,0 +1,132 @@
+{% extends "global/Page.html" %}
+{% load otree %}
+
+{% block styles %}
+<style>
+    :root {
+        --bg-light: #f5f7fb;
+        --card-bg: #ffffff;
+        --text-dark: #1f2933;
+        --text-muted: #6b7280;
+        --accent-red: #ff6b6b;
+        --accent-orange: #f7a35c;
+        --accent-gray: #c5ced8;
+        --accent-green: #4cd698;
+        --accent-teal: #14b8a6;
+    }
+    body { background-color: var(--bg-light); }
+    .survey-wrapper { max-width: 760px; margin: 0 auto; padding: 24px 16px 48px; }
+    .progress-display { margin-bottom: 24px; }
+    .progress-label-top { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--text-muted); margin-bottom: 8px; }
+    .progress-bar-track { position: relative; height: 12px; border-radius: 999px; background: #e5e7eb; overflow: hidden; }
+    .progress-bar-fill { position: absolute; top: 0; bottom: 0; left: 0; width: 0; border-radius: 999px; background: linear-gradient(120deg, #6366f1, #14b8a6); transition: width 0.4s ease; }
+    .page-header { text-align: center; margin-bottom: 32px; }
+    .page-header h2 { font-size: 24px; margin-bottom: 8px; color: var(--text-dark); font-weight: 600; }
+    .page-header p { margin: 0; color: var(--text-muted); }
+
+    .legend { display: flex; justify-content: center; gap: 24px; flex-wrap: wrap; margin-bottom: 24px; font-size: 13px; color: var(--text-muted); }
+    .legend-item { display: flex; align-items: center; gap: 8px; }
+    .legend-dot { width: 18px; height: 18px; border-radius: 50%; border: 3px solid currentColor; background-color: currentColor; }
+    .legend-item.strongly-disagree { color: var(--accent-red); }
+    .legend-item.disagree { color: var(--accent-orange); }
+    .legend-item.neutral { color: var(--accent-gray); }
+    .legend-item.agree { color: var(--accent-green); }
+    .legend-item.strongly-agree { color: var(--accent-teal); }
+
+    .question-card { background-color: var(--card-bg); border-radius: 18px; padding: 24px; margin-bottom: 20px; box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06); }
+    .statement { font-size: 17px; font-weight: 500; color: var(--text-dark); margin-bottom: 18px; }
+
+    .scale { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+    .scale-option { flex: 1 1 120px; display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; text-align: center; color: var(--text-muted); }
+    .scale-option input { display: none; }
+    .option-circle { width: 42px; height: 42px; border-radius: 50%; border: 2px solid currentColor; transition: transform 0.2s ease, box-shadow 0.2s ease; background: white; }
+    .scale-option input:checked + .option-circle { transform: scale(1.1); box-shadow: 0 6px 16px rgba(79, 70, 229, 0.18); background: currentColor; }
+    .scale-option input:focus-visible + .option-circle { outline: 3px solid rgba(29, 78, 216, 0.35); outline-offset: 3px; }
+    .scale-option .option-label { font-size: 13px; font-weight: 500; }
+    .scale-option.strongly-disagree { color: var(--accent-red); }
+    .scale-option.disagree { color: var(--accent-orange); }
+    .scale-option.neutral { color: var(--accent-gray); }
+    .scale-option.agree { color: var(--accent-green); }
+    .scale-option.strongly-agree { color: var(--accent-teal); }
+
+    .next-wrapper { display: flex; justify-content: flex-end; margin-top: 28px; }
+    .next-wrapper button,
+    .next-wrapper input[type=submit] {
+        background: linear-gradient(120deg, #6366f1, #14b8a6);
+        border: none; color: white; font-weight: 600;
+        padding: 14px 28px; border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(99, 102, 241, 0.35);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .next-wrapper button:hover,
+    .next-wrapper input[type=submit]:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 14px 30px rgba(79, 70, 229, 0.4);
+    }
+    .progress { margin-top: 16px; font-size: 13px; text-align: center; color: var(--text-muted); }
+
+    @media (max-width: 640px) {
+        .statement { font-size: 16px; }
+        .scale { gap: 8px; }
+        .scale-option { flex: 1 1 100px; }
+    }
+</style>
+{% endblock %}
+
+{% block title %}{% if progress or progress == 0 %}{{ progress }}% complete{% else %}Questionnaire{% endif %}{% endblock %}
+
+{% block content %}
+<div class="survey-wrapper">
+    <div class="progress-display" role="img" aria-label="Progress {% if progress or progress == 0 %}{{ progress }}{% else %}0{% endif %} percent">
+        <div class="progress-label-top">
+            <span>Progress</span>
+            <span>{% if progress or progress == 0 %}{{ progress }}{% else %}0{% endif %}%</span>
+        </div>
+        <div class="progress-bar-track">
+            <div class="progress-bar-fill" style="width: {% if progress or progress == 0 %}{{ progress }}{% else %}0{% endif %}%;"></div>
+        </div>
+    </div>
+
+    <div class="page-header">
+        <h2>Choose how accurately each statement reflects you.</h2>
+        <p>Please answer every question before continuing.</p>
+    </div>
+
+    <div class="legend">
+        {% for option in scale_options %}
+            <div class="legend-item {{ option.css }}">
+                <span class="legend-dot"></span>
+                <span>{{ option.text }}</span>
+            </div>
+        {% endfor %}
+    </div>
+
+    {% for question in questions %}
+        <div class="question-card">
+            <div class="statement">{{ question.text }}</div>
+
+            <div class="scale" role="radiogroup" aria-label="{{ question.trait }}">
+                {% for option in scale_options %}
+                    <label class="scale-option {{ option.css }}" for="{{ question.field }}_{{ option.value }}">
+                        <input
+                            id="{{ question.field }}_{{ option.value }}"
+                            type="radio"
+                            name="{{ question.field }}"
+                            value="{{ option.value }}"
+                            required
+                            {% if question.selected == option.value %}checked{% endif %}
+                        >
+                        <span class="option-circle"></span>
+                        <span class="option-label">{{ option.text }}</span>
+                    </label>
+                {% endfor %}
+            </div>
+        </div>
+    {% endfor %}
+
+    <div class="next-wrapper">
+        {{ next_button }}
+    </div>
+    <div class="progress">Page {{ page_number }} of {{ total_pages }}</div>
+</div>
+{% endblock %}

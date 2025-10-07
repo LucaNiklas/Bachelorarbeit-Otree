@@ -1,0 +1,71 @@
+{% extends "global/Page.html" %}
+{% load otree %}
+
+{% block styles %}
+<style>
+    body { background-color: #f5f7fb; }
+    .intro-wrapper {
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 64px 16px 72px;
+    }
+    .intro-card {
+        background: #ffffff;
+        border-radius: 20px;
+        padding: 48px 40px;
+        box-shadow: 0 24px 40px rgba(15, 23, 42, 0.12);
+    }
+    .intro-card h1 {
+        font-size: 30px;
+        font-weight: 600;
+        color: #1f2933;
+        margin-bottom: 18px;
+        text-align: center;
+    }
+    .intro-card p {
+        font-size: 16px;
+        line-height: 1.7;
+        color: #4b5563;
+        margin-bottom: 18px;
+    }
+    .intro-card p:last-of-type {
+        margin-bottom: 28px;
+    }
+    .next-wrapper {
+        display: flex;
+        justify-content: center;
+    }
+    .next-wrapper button,
+    .next-wrapper input[type=submit] {
+        background: linear-gradient(120deg, #6366f1, #14b8a6);
+        border: none;
+        color: #ffffff;
+        font-weight: 600;
+        padding: 14px 28px;
+        border-radius: 12px;
+        box-shadow: 0 12px 30px rgba(99, 102, 241, 0.35);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .next-wrapper button:hover,
+    .next-wrapper input[type=submit]:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 18px 36px rgba(79, 70, 229, 0.4);
+    }
+</style>
+{% endblock %}
+
+{% block title %}{% endblock %}
+
+{% block content %}
+<div class="intro-wrapper">
+    <div class="intro-card">
+        <h1>Welcome</h1>
+        <p>The entire session will take approximately 5 to 10 minutes to complete.</p>
+        <p>In the first part, you will take the Big Five Personality Test, where you’ll be asked to rate how well certain statements describe you.</p>
+        <p>After completing this section, you will play up to 10 rounds of Blackjack. Further instructions for the game will be provided right before it begins.</p>
+        <div class="next-wrapper">
+            {{ next_button }}
+        </div>
+    </div>
+</div>
+{% endblock %}

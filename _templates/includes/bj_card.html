@@ -1,0 +1,14 @@
+{% if card.hidden %}
+  <div class="bj-card bj-card--back"></div>
+{% else %}
+  <div class="bj-card {% if card.is_red %}bj-card--red{% endif %}" data-suit="{{ card.suit }}">
+    <div class="bj-card__corner">
+      <span class="bj-card__rank">{{ card.rank }}</span>
+      <span class="bj-card__corner-suit">{{ card.suit }}</span>
+    </div>
+    <div class="bj-card__corner bj-card__corner--bottom">
+      <span class="bj-card__rank">{{ card.rank }}</span>
+      <span class="bj-card__corner-suit">{{ card.suit }}</span>
+    </div>
+  </div>
+{% endif %}
