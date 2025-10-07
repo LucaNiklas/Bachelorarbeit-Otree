@@ -12,6 +12,9 @@
 {% endblock %}
 
 {% block content %}
+  {# Hidden-Feld für Fallback-POST – muss innerhalb des (von Page.html) umschließenden Formulars stehen #}
+  <input type="hidden" name="decision" id="decision-input">
+
   <div class="bj-layout">
     <div class="bj-summary">
       <div>
@@ -91,9 +94,7 @@
     '</div>';
   }
 
-  function createHiddenCardHTML(){
-    return '<div class="bj-card bj-card--back"></div>';
-  }
+  function createHiddenCardHTML(){ return '<div class="bj-card bj-card--back"></div>'; }
 
   function renderCards(container, cards, options){
     if(!container) return;
@@ -141,9 +142,33 @@
     return data;
   }
 
+  // ---- Fallback: normales POST, falls liveSend nicht verfügbar/fehlschlägt
+  function fallbackSubmit(action){
+    var form = document.querySelector('form');
+    if(!form) return;
+    var hidden = document.getElementById('decision-input');
+    if(!hidden){
+      hidden = document.createElement('input');
+      hidden.type = 'hidden';
+      hidden.name = 'decision';
+      hidden.id = 'decision-input';
+      form.appendChild(hidden);
+    }
+    hidden.value = action;
+    form.submit();
+  }
+
   function send(action){
-    if(action == null) return;
-    liveSend({ action: action });
+    if(!action) return;
+    if (typeof window.liveSend === 'function') {
+      try {
+        liveSend({ action: action });
+        return;
+      } catch (e) {
+        // fällt durch zum Fallback
+      }
+    }
+    fallbackSubmit(action);
   }
 
   function liveRecv(data){
@@ -169,6 +194,7 @@
         nextWrapper.style.display = 'flex';
         if(nextBtn){ nextBtn.focus(); }
       }
+      // Manche Mobile-Browser blocken programmatische Clicks; nicht kritisch dank Fallback.
       setTimeout(function(){ if(nextBtn){ nextBtn.click(); } }, 150);
     } else if(nextWrapper){
       nextWrapper.style.display = 'none';
@@ -190,24 +216,14 @@
     nextBtn = nextWrapper ? nextWrapper.querySelector('button') : null;
 
     if(playerCardsEl && playerCardsEl.dataset.cards){
-      try {
-        initialPlayerCards = JSON.parse(playerCardsEl.dataset.cards);
-      } catch (err) {
-        initialPlayerCards = [];
-      }
+      try { initialPlayerCards = JSON.parse(playerCardsEl.dataset.cards); } catch (err) { initialPlayerCards = []; }
     }
     if(dealerCardsEl && dealerCardsEl.dataset.cards){
-      try {
-        initialDealerCards = JSON.parse(dealerCardsEl.dataset.cards);
-      } catch (err) {
-        initialDealerCards = [];
-      }
+      try { initialDealerCards = JSON.parse(dealerCardsEl.dataset.cards); } catch (err) { initialDealerCards = []; }
       dealerUpcard = dealerCardsEl.dataset.upcard;
     }
 
-    if(doubleBtn){
-      doubleBtn.dataset.disabled = doubleBtn.disabled.toString();
-    }
+    if(doubleBtn){ doubleBtn.dataset.disabled = doubleBtn.disabled.toString(); }
 
     renderCards(playerCardsEl, initialPlayerCards);
     if(dealerUpcard){
@@ -215,21 +231,19 @@
     } else {
       renderCards(dealerCardsEl, initialDealerCards);
     }
-    if (dealerValueEl) {
-      dealerValueEl.textContent = 'Value: ?';
-    }
+    if (dealerValueEl) { dealerValueEl.textContent = 'Value: ?'; }
 
-    if(hitBtn){
-      hitBtn.addEventListener('click', function(){ send('hit'); });
-    }
-    if(standBtn){
-      standBtn.addEventListener('click', function(){ send('stand'); });
-    }
-    if(doubleBtn){
-      doubleBtn.addEventListener('click', function(){ send('double'); });
-    }
+    // Klick + Touch-Fallback für Mobile
+    ['click','touchend'].forEach(function(evt){
+      if(hitBtn)   hitBtn.addEventListener(evt, function(){ send('hit'); },   {passive:true});
+      if(standBtn) standBtn.addEventListener(evt, function(){ send('stand'); }, {passive:true});
+      if(doubleBtn)doubleBtn.addEventListener(evt, function(){ send('double'); },{passive:true});
+    });
 
-    send('status');
+    // Initialstatus abfragen
+    if (typeof window.liveSend === 'function') {
+      try { liveSend({ action: 'status' }); } catch(e){ /* ignorieren */ }
+    }
   });
 </script>
 {% endblock %}
