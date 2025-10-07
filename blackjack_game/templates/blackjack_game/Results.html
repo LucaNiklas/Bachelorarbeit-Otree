@@ -9,22 +9,131 @@
 {% block styles %}
   {{ super }}
   {% include 'blackjack_game/includes/continue_styles.html' %}
+  <style>
+    .bj-summary {
+      display: flex;
+      gap: 0.85rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 0.35rem;
+    }
+
+    .bj-summary__item {
+      min-width: 130px;
+      padding: 0.65rem 0.75rem;
+      border-radius: 14px;
+      background: rgba(99, 102, 241, 0.08);
+      border: 1px solid rgba(99, 102, 241, 0.18);
+      text-align: center;
+      box-shadow: 0 10px 22px rgba(15, 23, 42, 0.05);
+    }
+
+    .bj-summary__label {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      color: #4c51bf;
+      margin-bottom: 0.35rem;
+    }
+
+    .bj-summary__value {
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: #1f2933;
+    }
+
+    .bj-hand {
+      border: 2px solid rgba(99, 102, 241, 0.18);
+      border-radius: 16px;
+      padding: 1.1rem 0.95rem 0.8rem;
+      background: rgba(255, 255, 255, 0.82);
+      box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+      margin-bottom: 0.25rem;
+      transition: box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+
+    .bj-hand + .bj-hand {
+      margin-top: 0.2rem;
+    }
+
+    .bj-hand__header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-bottom: 1rem;
+      padding-bottom: 0.85rem;
+      border-bottom: 1px solid rgba(99, 102, 241, 0.12);
+    }
+
+    .bj-hand-label {
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #4338ca;
+    }
+
+    .bj-hand-meta,
+    .bj-hand__header > div:last-child {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+    }
+
+    .bj-hand-value {
+      font-weight: 600;
+      color: #1f2933;
+      font-size: 1rem;
+    }
+
+    .card-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.85rem;
+      justify-content: center;
+    }
+
+    @media (max-width: 576px) {
+      .bj-summary {
+        gap: 0.6rem;
+      }
+
+      .bj-summary__item {
+        min-width: 110px;
+        padding: 0.5rem 0.55rem;
+      }
+
+      .bj-hand {
+        padding: 0.9rem 0.65rem 0.7rem;
+        border-radius: 15px;
+      }
+
+      .bj-hand-label {
+        font-size: 1rem;
+      }
+
+      .card-row {
+        gap: 0.6rem;
+      }
+    }
+  </style>
 {% endblock %}
 
 {% block content %}
   <div class="bj-layout">
     <div class="bj-summary">
-      <div>
-        <div class="bj-hand-label">Current balance</div>
-        <div class="bj-hand-value">{{ balance_display }}</div>
+      <div class="bj-summary__item">
+        <div class="bj-summary__label">Current Balance</div>
+        <div class="bj-summary__value">{{ balance_display }}</div>
       </div>
-      <div>
-        <div class="bj-hand-label">Bet</div>
-        <div class="bj-hand-value">{{ bet_display }}</div>
+      <div class="bj-summary__item">
+        <div class="bj-summary__label">Bet</div>
+        <div class="bj-summary__value">{{ bet_display }}</div>
       </div>
-      <div>
-        <div class="bj-hand-label">Payout</div>
-        <div class="bj-hand-value">{{ payoff_display }}</div>
+      <div class="bj-summary__item">
+        <div class="bj-summary__label">Payoff</div>
+        <div class="bj-summary__value">{{ payoff_display }}</div>
       </div>
     </div>
 
