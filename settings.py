@@ -5,8 +5,6 @@ SESSION_CONFIGS = [
         display_name='Blackjack (Demo)',
         app_sequence=['blackjack_game'],
         num_demo_participants=1,
-        # Beispiel für optionale Parameter:
-        # start_bankroll=100, num_rounds=5,
     ),
     dict(
         name='bigfive_demo',
