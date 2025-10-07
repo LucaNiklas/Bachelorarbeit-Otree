@@ -144,11 +144,12 @@
   var redSuits = ['♥', '♦'];
 
   var balanceEl, betValueEl, playerCardsEl, playerValueEl, dealerCardsEl, dealerValueEl, statusEl;
-  var hitBtn, standBtn, doubleBtn, dealBtn, nextWrapper, nextBtn;
+  var hitBtn, standBtn, doubleBtn, dealBtn, nextWrapper, nextBtn, formEl;
   var initialPlayerCards = [], initialDealerCards = [], dealerUpcard;
   var selectedAction = null;
   var pendingSubmit = false;
   var decisionStartTs = null;
+  var decisionInput, decisionRtInput;
 
   function createCardHTML(card){
     var rank = card.slice(0, -1);
@@ -243,46 +244,23 @@
 
   function updateDealState(){
     if(dealBtn){
-      dealBtn.disabled = !selectedAction || pendingSubmit;
+      dealBtn.disabled = !selectedAction;
     }
   }
 
-  // ---- Fallback: normales POST, falls liveSend nicht verfügbar/fehlschlägt
-  function fallbackSubmit(action, responseTime){
-    var form = document.querySelector('form');
-    if(!form) return;
-    var hidden = document.getElementById('decision-input');
-    if(!hidden){
-      hidden = document.createElement('input');
-      hidden.type = 'hidden';
-      hidden.name = 'decision';
-      hidden.id = 'decision-input';
-      form.appendChild(hidden);
+  function prepareSubmit(action, responseTime){
+    if(!decisionInput){
+      decisionInput = document.getElementById('decision-input');
     }
-    hidden.value = action;
-    var hiddenRt = document.getElementById('decision-rt-input');
-    if(!hiddenRt){
-      hiddenRt = document.createElement('input');
-      hiddenRt.type = 'hidden';
-      hiddenRt.name = 'decision_response_time';
-      hiddenRt.id = 'decision-rt-input';
-      form.appendChild(hiddenRt);
+    if(!decisionRtInput){
+      decisionRtInput = document.getElementById('decision-rt-input');
     }
-    hiddenRt.value = responseTime != null ? responseTime.toFixed(3) : '';
-    form.submit();
-  }
-
-  function dispatchAction(action, responseTime){
-    if(!action) return;
-    if (typeof window.liveSend === 'function') {
-      try {
-        liveSend({ action: action, response_time: responseTime });
-        return;
-      } catch (e) {
-        // fällt durch zum Fallback
-      }
+    if(decisionInput){
+      decisionInput.value = action || '';
     }
-    fallbackSubmit(action, responseTime);
+    if(decisionRtInput){
+      decisionRtInput.value = responseTime != null ? responseTime.toFixed(3) : '';
+    }
   }
 
   function liveRecv(data){
@@ -369,25 +347,32 @@
     if(standBtn){ standBtn.addEventListener('click', function(){ handleSelect('stand', standBtn); }); }
     if(doubleBtn){ doubleBtn.addEventListener('click', function(){ handleSelect('double', doubleBtn); }); }
 
+    formEl = document.querySelector('form.otree-form') || document.querySelector('form');
+
     if(dealBtn){
-      dealBtn.addEventListener('click', function(){
-        if(!selectedAction){
-          if(statusEl){ statusEl.textContent = 'Bitte zuerst eine Aktion wählen.'; }
+      dealBtn.type = 'button';
+      dealBtn.addEventListener('click', function(event){
+        event.preventDefault();
+        if(!selectedAction || pendingSubmit){
+          if(!selectedAction && statusEl){ statusEl.textContent = 'Bitte zuerst eine Aktion wählen.'; }
           return;
         }
         pendingSubmit = true;
-        updateDealState();
         var rt = captureResponseTime();
-        dispatchAction(selectedAction, rt);
+        prepareSubmit(selectedAction, rt);
+        if(formEl){
+          if(typeof formEl.requestSubmit === 'function'){
+            formEl.requestSubmit();
+          } else {
+            formEl.submit();
+          }
+        }
+        if(dealBtn){ dealBtn.disabled = true; }
       });
     }
 
     updateDealState();
     startTimer();
-
-    if (typeof window.liveSend === 'function') {
-      try { liveSend({ action: 'status' }); } catch(e){ /* ignorieren */ }
-    }
   });
 </script>
 {% endblock %}

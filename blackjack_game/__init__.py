@@ -87,6 +87,7 @@ class Player(BasePlayer):
     has_hit = models.BooleanField(initial=False)
     decision_response_time = models.FloatField(initial=0)
     decision_timings_json = models.LongStringField(blank=True)
+    bankroll_before_round = models.CurrencyField(blank=True)
     final_player_cards_json = models.LongStringField(blank=True)
     final_dealer_cards_json = models.LongStringField(blank=True)
     final_player_ranks_csv = models.LongStringField(blank=True)
@@ -311,6 +312,7 @@ class Player(BasePlayer):
         self.payoff = cu(0)
         self.decision_response_time = 0
         self.decision_timings_json = json.dumps([])
+        self.bankroll_before_round = self.balance
         self.final_player_cards_json = ''
         self.final_dealer_cards_json = ''
         self.final_player_ranks_csv = ''
