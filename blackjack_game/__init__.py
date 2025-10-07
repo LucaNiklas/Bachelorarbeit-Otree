@@ -86,6 +86,7 @@ class Player(BasePlayer):
     dealer_done = models.BooleanField(initial=False)
     has_hit = models.BooleanField(initial=False)
     decision_response_time = models.FloatField(initial=0)
+    decision_timings_json = models.LongStringField(blank=True)
     final_player_cards_json = models.LongStringField(blank=True)
     final_dealer_cards_json = models.LongStringField(blank=True)
     final_player_ranks_csv = models.LongStringField(blank=True)
@@ -123,6 +124,23 @@ class Player(BasePlayer):
     def _save_deck_state(self, deck):
         self._save('deck_json', deck)
         self._store_shoe(deck)
+
+    def _append_decision_time(self, seconds):
+        if seconds is None:
+            return
+        try:
+            value = float(seconds)
+        except (TypeError, ValueError):
+            return
+        timings = []
+        if self.decision_timings_json:
+            try:
+                timings = json.loads(self.decision_timings_json)
+            except Exception:
+                timings = []
+        timings.append(value)
+        self.decision_timings_json = json.dumps(timings)
+        self.decision_response_time = sum(timings)
 
     @staticmethod
     def _card_value(rank):
@@ -292,6 +310,7 @@ class Player(BasePlayer):
         self.deviation_from_optimal = False
         self.payoff = cu(0)
         self.decision_response_time = 0
+        self.decision_timings_json = json.dumps([])
         self.final_player_cards_json = ''
         self.final_dealer_cards_json = ''
         self.final_player_ranks_csv = ''
@@ -470,12 +489,33 @@ class Decision(Page):
     @staticmethod
     def live_method(player: Player, data):
         action = data.get('action') if isinstance(data, dict) else data
+        response_time_value = None
+        if isinstance(data, dict):
+            response_time_value = data.get('response_time')
         start_key = f'decision_start_{player.round_number}'
         if start_key not in player.participant.vars:
             player.participant.vars[start_key] = time()
 
         if isinstance(data, dict) and data.get('__next'):
             return {player.id_in_group: dict(__next=True)}
+
+        def record_timing(next_interval):
+            measured = None
+            if response_time_value is not None:
+                try:
+                    measured = float(response_time_value)
+                except (TypeError, ValueError):
+                    measured = None
+            if measured is None:
+                start_ts = player.participant.vars.get(start_key)
+                if start_ts:
+                    measured = time() - start_ts
+            if measured is not None:
+                player._append_decision_time(measured)
+            if next_interval:
+                player.participant.vars[start_key] = time()
+            else:
+                player.participant.vars.pop(start_key, None)
 
         def record_action(action_key):
             label_map = {'hit': 'Hit', 'stand': 'Stand', 'double': 'Double'}
@@ -514,9 +554,6 @@ class Decision(Page):
             if error:
                 payload['error'] = error
             if done:
-                start_ts = player.participant.vars.pop(start_key, None)
-                if start_ts:
-                    player.decision_response_time = time() - start_ts
                 player.bankroll_after_round = player.balance
                 payload['done'] = True
                 payload['__next'] = True
@@ -528,12 +565,15 @@ class Decision(Page):
         if action == 'hit':
             record_action('hit')
             player.player_hit()
-            if player.player_busted or player.dealer_done:
+            round_done = player.player_busted or player.dealer_done
+            record_timing(next_interval=not round_done)
+            if round_done:
                 return state(done=True, reveal_dealer=True)
             return state()
 
         if action == 'stand':
             record_action('stand')
+            record_timing(next_interval=False)
             player.player_stand()
             player.dealer_play()
             player._settle()
@@ -546,6 +586,7 @@ class Decision(Page):
                 return state(error='Insufficient balance to double.')
             record_action('double')
             player.player_double()
+            record_timing(next_interval=False)
             if not player.dealer_done:
                 player.dealer_play()
                 player._settle()
@@ -558,7 +599,13 @@ class Decision(Page):
         action = post_data.get('decision') if post_data else None
         if not action:
             return super().post()
-        resp = Decision.live_method(self.player, {'action': action})
+        response_time = None
+        if post_data:
+            response_time = post_data.get('decision_response_time') or None
+        resp = Decision.live_method(self.player, {
+            'action': action,
+            'response_time': response_time,
+        })
         payload = resp.get(self.player.id_in_group, {})
         if payload.get('done'):
             return super().post()

@@ -9,11 +9,76 @@
 {% block styles %}
   {{ super }}
   {% include 'blackjack_game/includes/continue_styles.html' %}
+  <style>
+    .bj-actions {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .bj-actions .bj-btn {
+      background: linear-gradient(135deg, #9fa4ad, #7b8291);
+      color: #f8fafc;
+      opacity: 0.85;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+    }
+
+    .bj-actions .bj-btn.is-selected {
+      opacity: 1;
+    }
+
+    .bj-actions .bj-btn.is-selected.bj-btn--hit {
+      background: linear-gradient(135deg, #1abc9c, #16a085);
+    }
+
+    .bj-actions .bj-btn.is-selected.bj-btn--stand {
+      background: linear-gradient(135deg, #e74c3c, #c0392b);
+    }
+
+    .bj-actions .bj-btn.is-selected.bj-btn--double {
+      background: linear-gradient(135deg, #4183d7, #3563c2);
+    }
+
+    .bj-deal-wrapper {
+      display: flex;
+      justify-content: center;
+      margin-top: 1.75rem;
+    }
+
+    .bj-deal-btn {
+      min-width: 220px;
+      padding: 0.85rem 2.5rem;
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      border-radius: 999px;
+      border: none;
+      background: linear-gradient(120deg, #6366f1, #14b8a6);
+      color: #ffffff;
+      box-shadow: 0 12px 30px rgba(99, 102, 241, 0.35);
+      transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease;
+      cursor: pointer;
+    }
+
+    .bj-deal-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .bj-deal-btn:not(:disabled):hover {
+      transform: translateY(-3px);
+      box-shadow: 0 18px 36px rgba(79, 70, 229, 0.4);
+    }
+  </style>
 {% endblock %}
 
 {% block content %}
   {# Hidden-Feld für Fallback-POST – muss innerhalb des (von Page.html) umschließenden Formulars stehen #}
   <input type="hidden" name="decision" id="decision-input">
+  <input type="hidden" name="decision_response_time" id="decision-rt-input">
 
   <div class="bj-layout">
     <div class="bj-summary">
@@ -58,10 +123,14 @@
 
     <div id="status" class="bj-status"></div>
 
-    <div class="bj-actions" role="group">
+    <div class="bj-actions" role="group" aria-label="Decision options">
       <button id="hit-btn" type="button" class="bj-btn bj-btn--hit">Hit</button>
       <button id="stand-btn" type="button" class="bj-btn bj-btn--stand">Stand</button>
       <button id="double-btn" type="button" class="bj-btn bj-btn--double" {% if not can_double %}disabled{% endif %}>Double</button>
+    </div>
+
+    <div class="bj-deal-wrapper">
+      <button id="deal-btn" type="button" class="bj-deal-btn" disabled>Deal</button>
     </div>
 
     <div id="next-wrapper" class="next-wrapper" style="display: none;">
@@ -74,8 +143,12 @@
 <script>
   var redSuits = ['♥', '♦'];
 
-  var balanceEl, betValueEl, playerCardsEl, playerValueEl, dealerCardsEl, dealerValueEl, statusEl, hitBtn, standBtn, doubleBtn, nextWrapper, nextBtn;
+  var balanceEl, betValueEl, playerCardsEl, playerValueEl, dealerCardsEl, dealerValueEl, statusEl;
+  var hitBtn, standBtn, doubleBtn, dealBtn, nextWrapper, nextBtn;
   var initialPlayerCards = [], initialDealerCards = [], dealerUpcard;
+  var selectedAction = null;
+  var pendingSubmit = false;
+  var decisionStartTs = null;
 
   function createCardHTML(card){
     var rank = card.slice(0, -1);
@@ -124,13 +197,18 @@
     if (hitBtn) hitBtn.disabled = disabled;
     if (standBtn) standBtn.disabled = disabled;
     if (doubleBtn) doubleBtn.disabled = disabled || doubleBtn.dataset.disabled === 'true';
+    if (dealBtn) dealBtn.disabled = true;
   }
 
   function updateButtons(canDouble){
     if (doubleBtn){
       doubleBtn.disabled = !canDouble;
       doubleBtn.dataset.disabled = (!canDouble).toString();
+      if(!canDouble && selectedAction === 'double'){
+        clearSelection();
+      }
     }
+    updateDealState();
   }
 
   function normalizePayload(data){
@@ -142,8 +220,35 @@
     return data;
   }
 
+  function startTimer(){ decisionStartTs = Date.now(); }
+
+  function captureResponseTime(){
+    if(!decisionStartTs) return null;
+    return (Date.now() - decisionStartTs) / 1000;
+  }
+
+  function clearSelection(){
+    selectedAction = null;
+    [hitBtn, standBtn, doubleBtn].forEach(function(btn){
+      if(btn){ btn.classList.remove('is-selected'); }
+    });
+    updateDealState();
+  }
+
+  function markSelected(button){
+    [hitBtn, standBtn, doubleBtn].forEach(function(btn){
+      if(btn){ btn.classList.toggle('is-selected', btn === button); }
+    });
+  }
+
+  function updateDealState(){
+    if(dealBtn){
+      dealBtn.disabled = !selectedAction || pendingSubmit;
+    }
+  }
+
   // ---- Fallback: normales POST, falls liveSend nicht verfügbar/fehlschlägt
-  function fallbackSubmit(action){
+  function fallbackSubmit(action, responseTime){
     var form = document.querySelector('form');
     if(!form) return;
     var hidden = document.getElementById('decision-input');
@@ -155,20 +260,29 @@
       form.appendChild(hidden);
     }
     hidden.value = action;
+    var hiddenRt = document.getElementById('decision-rt-input');
+    if(!hiddenRt){
+      hiddenRt = document.createElement('input');
+      hiddenRt.type = 'hidden';
+      hiddenRt.name = 'decision_response_time';
+      hiddenRt.id = 'decision-rt-input';
+      form.appendChild(hiddenRt);
+    }
+    hiddenRt.value = responseTime != null ? responseTime.toFixed(3) : '';
     form.submit();
   }
 
-  function send(action){
+  function dispatchAction(action, responseTime){
     if(!action) return;
     if (typeof window.liveSend === 'function') {
       try {
-        liveSend({ action: action });
+        liveSend({ action: action, response_time: responseTime });
         return;
       } catch (e) {
         // fällt durch zum Fallback
       }
     }
-    fallbackSubmit(action);
+    fallbackSubmit(action, responseTime);
   }
 
   function liveRecv(data){
@@ -199,6 +313,15 @@
     } else if(nextWrapper){
       nextWrapper.style.display = 'none';
     }
+
+    pendingSubmit = false;
+    if(payload.done){
+      clearSelection();
+      decisionStartTs = null;
+    } else {
+      clearSelection();
+      startTimer();
+    }
   }
 
   document.addEventListener('DOMContentLoaded', function(){
@@ -212,6 +335,7 @@
     hitBtn = document.getElementById('hit-btn');
     standBtn = document.getElementById('stand-btn');
     doubleBtn = document.getElementById('double-btn');
+    dealBtn = document.getElementById('deal-btn');
     nextWrapper = document.getElementById('next-wrapper');
     nextBtn = nextWrapper ? nextWrapper.querySelector('button') : null;
 
@@ -233,14 +357,34 @@
     }
     if (dealerValueEl) { dealerValueEl.textContent = 'Value: ?'; }
 
-    // Klick + Touch-Fallback für Mobile
-    ['click','touchend'].forEach(function(evt){
-      if(hitBtn)   hitBtn.addEventListener(evt, function(){ send('hit'); },   {passive:true});
-      if(standBtn) standBtn.addEventListener(evt, function(){ send('stand'); }, {passive:true});
-      if(doubleBtn)doubleBtn.addEventListener(evt, function(){ send('double'); },{passive:true});
-    });
+    function handleSelect(action, button){
+      if(!button || button.disabled || pendingSubmit) return;
+      selectedAction = action;
+      markSelected(button);
+      updateDealState();
+      if(statusEl){ statusEl.textContent = ''; }
+    }
 
-    // Initialstatus abfragen
+    if(hitBtn){ hitBtn.addEventListener('click', function(){ handleSelect('hit', hitBtn); }); }
+    if(standBtn){ standBtn.addEventListener('click', function(){ handleSelect('stand', standBtn); }); }
+    if(doubleBtn){ doubleBtn.addEventListener('click', function(){ handleSelect('double', doubleBtn); }); }
+
+    if(dealBtn){
+      dealBtn.addEventListener('click', function(){
+        if(!selectedAction){
+          if(statusEl){ statusEl.textContent = 'Bitte zuerst eine Aktion wählen.'; }
+          return;
+        }
+        pendingSubmit = true;
+        updateDealState();
+        var rt = captureResponseTime();
+        dispatchAction(selectedAction, rt);
+      });
+    }
+
+    updateDealState();
+    startTimer();
+
     if (typeof window.liveSend === 'function') {
       try { liveSend({ action: 'status' }); } catch(e){ /* ignorieren */ }
     }
