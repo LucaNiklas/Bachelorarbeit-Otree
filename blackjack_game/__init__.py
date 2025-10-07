@@ -554,7 +554,8 @@ class Decision(Page):
         return {player.id_in_group: dict()}
 
     def post(self):
-        action = self.request.POST.get('decision')
+        post_data = self._form_data
+        action = post_data.get('decision') if post_data else None
         if not action:
             return super().post()
         resp = Decision.live_method(self.player, {'action': action})
