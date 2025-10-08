@@ -97,6 +97,8 @@
         <p>Adjust the slider below to choose your stake for this round. Bets are available in steps of {{ min_bet_display }}.</p>
       {% endif %}
 
+      <div class="bet-selected">Selected bet: <span id="betValue">{{ current_bet }}</span></div>
+
       <div class="bet-slider">
         <input type="range"
                id="bet-slider"
@@ -109,8 +111,6 @@
           <span>Max: {{ balance_display }}</span>
         </div>
       </div>
-
-      <div class="bet-selected">Selected bet: <span id="betValue">{{ current_bet }}</span></div>
 
       <input type="hidden" name="bet_size" id="betInput" value="{{ current_bet }}">
 
