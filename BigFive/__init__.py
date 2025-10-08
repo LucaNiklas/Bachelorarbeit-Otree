@@ -3,7 +3,7 @@ from otree.api import *
 
 def _field_value_or_none(model: BasePlayer, field_name: str):
     try:
-        return model.field_maybe_none(field_name)  # type: ignore[attr-defined]
+        return model.field_maybe_none(field_name)  
     except AttributeError:
         return model.__dict__.get(field_name)
 
@@ -103,7 +103,7 @@ class C(BaseConstants):
     dict(field='q3', trait='Openness', text='I prefer routine tasks over experimenting with something new.', reverse=True),
     dict(field='q4', trait='Openness', text='I appreciate art, music, or literature.', reverse=False),
     dict(field='q5', trait='Openness', text='I stick with familiar solutions instead of trying untested ones.', reverse=True),
-    dict(field='q26', trait='RiskTolerance', text='In general, I am willing to take risks.', reverse=False),
+    dict(field='q26', trait='RiskTolerance', text='In general, I am willing to take risks.', reverse=False), # Risk Tolerance Frage
 
     dict(field='q6', trait='Conscientiousness', text='I pay close attention to details when working on tasks.', reverse=False),
     dict(field='q7', trait='Conscientiousness', text='I keep my workspace and schedule well organized.', reverse=False),
@@ -149,7 +149,7 @@ class Group(BaseGroup):
 
 class Player(BasePlayer):
     age = models.IntegerField(min=16, max=99, blank=True)
-    gender = models.StringField(choices=['Female', 'Male', 'Divers'], blank=True)
+    gender = models.StringField(choices=['Female', 'Male', 'Non-binary'], blank=True)
     education = models.StringField(choices=[
         'No formal education',
         'Lower secondary school (Hauptschule)',
@@ -160,6 +160,12 @@ class Player(BasePlayer):
         'Master’s degree',
         'Doctorate / PhD',
         'Other',
+    ], blank=True)
+    blackjack_familiarity = models.StringField(choices=[
+        'Not familiar at all',
+        'Somewhat familiar',
+        'Fairly familiar',
+        'Very familiar',
     ], blank=True)
     q1 = models.IntegerField(choices=[1, 2, 3, 4, 5])
     q2 = models.IntegerField(choices=[1, 2, 3, 4, 5])
@@ -195,7 +201,7 @@ class Intro(Page):
 
 class Demographics(Page):
     form_model = 'player'
-    form_fields = ['age', 'gender', 'education']
+    form_fields = ['age', 'gender', 'education', 'blackjack_familiarity']
     template_name = 'BigFive/Demographics.html'
 
 
@@ -250,7 +256,6 @@ class PageFive(Page):
 
     @staticmethod
     def before_next_page(player: Player, timeout_happened):
-        # store computed trait scores for downstream apps (e.g., Blackjack)
         player.participant.vars['bigfive_trait_scores'] = compute_trait_scores(player)
 
 

@@ -2,6 +2,13 @@ from otree.api import *
 import random, json
 from time import time
 
+
+def floor_to_step(amount, step):
+    if amount < step:
+        return cu(0)
+    remainder = amount % step
+    return amount - remainder
+
 doc = """Blackjack (1 Spieler vs. Dealer), 10 Runden."""
 
 
@@ -66,6 +73,7 @@ class Constants(BaseConstants):
     num_rounds = 10
     DEALER_STAND_ON = 17
     START_BALANCE = cu(100)
+    MIN_BET = cu(5)
     NUM_DECKS = 6
 
 class Group(BaseGroup): 
@@ -73,7 +81,7 @@ class Group(BaseGroup):
 
 class Player(BasePlayer):
     balance = models.CurrencyField(initial=Constants.START_BALANCE)
-    bet_size = models.CurrencyField(min=1, initial=1)
+    bet_size = models.CurrencyField(min=Constants.MIN_BET, initial=Constants.MIN_BET)
     outcome = models.StringField(choices=['win','lose','push','blackjack'], blank=True)
     decision = models.LongStringField(blank=True)
     deviation_from_optimal = models.BooleanField(initial=False)
@@ -428,27 +436,50 @@ class BetPage(Page):
 
     @staticmethod
     def is_displayed(player: Player):
-        return player.round_number <= player.summary_round() and player.balance > 0
+        return (
+            player.round_number <= player.summary_round()
+            and player.balance >= Constants.MIN_BET
+        )
 
     @staticmethod
     def vars_for_template(player: Player):
         if player.round_number > 1:
             previous_round = player.in_round(player.round_number - 1)
             player.balance = previous_round.balance
-        if player.bet_size > player.balance:
-            player.bet_size = player.balance
+        if player.balance < Constants.MIN_BET:
+            return dict()
+
+        max_bet_currency = floor_to_step(player.balance, Constants.MIN_BET)
+        if max_bet_currency < Constants.MIN_BET:
+            max_bet_currency = Constants.MIN_BET
+
+        if player.bet_size < Constants.MIN_BET:
+            player.bet_size = Constants.MIN_BET
+        if player.bet_size > max_bet_currency:
+            player.bet_size = max_bet_currency
+
+        min_bet_value = int(float(Constants.MIN_BET))
+        max_bet_value = int(float(max_bet_currency))
+        current_bet_value = int(float(player.bet_size))
         return dict(
             balance_display=Player.format_currency(player.balance),
-            max_bet=player.balance,
+            min_bet=min_bet_value,
+            max_bet=max_bet_value,
+            current_bet=current_bet_value,
             show_bet_intro=(player.round_number == 1),
             start_balance_display=Player.format_currency(Constants.START_BALANCE),
             total_rounds=Constants.num_rounds,
+            min_bet_display=Player.format_currency(Constants.MIN_BET),
         )
 
     @staticmethod
     def error_message(player: Player, values):
-        if values['bet_size'] < 1 or values['bet_size'] > player.balance:
-            return 'Bet size must be between 1 and your current balance.'
+        bet = values['bet_size']
+        max_bet = floor_to_step(player.balance, Constants.MIN_BET)
+        if bet < Constants.MIN_BET or bet > max_bet:
+            return f'Bet size must be between {Player.format_currency(Constants.MIN_BET)} and your available balance.'
+        if bet % Constants.MIN_BET != cu(0):
+            return f'Please choose a bet in increments of {Player.format_currency(Constants.MIN_BET)}.'
 
     @staticmethod
     def before_next_page(player: Player, timeout_happened):
@@ -671,7 +702,7 @@ class Results(Page):
 
     @staticmethod
     def before_next_page(player: Player, timeout_happened):
-        if player.balance <= 0 and 'summary_round' not in player.participant.vars:
+        if player.balance < Constants.MIN_BET and 'summary_round' not in player.participant.vars:
             player.participant.vars['summary_round'] = player.round_number
         if player.round_number < Constants.num_rounds:
             next_player = player.in_round(player.round_number + 1)
@@ -687,17 +718,13 @@ class Summary(Page):
         final_balance = player.balance
         net_result = final_balance - Constants.START_BALANCE
         summary_round = player.summary_round()
-        eliminated_round = None
-        if final_balance <= 0 or summary_round < Constants.num_rounds:
-            eliminated_round = summary_round
-        final_balance_value = float(final_balance)
-        net_result_value = float(net_result)
+        eliminated_round = summary_round if (final_balance < Constants.MIN_BET or summary_round < Constants.num_rounds) else None
         return dict(
             final_balance=final_balance,
-            final_balance_value=final_balance_value,
+            final_balance_value=float(final_balance),
             final_balance_display=Player.format_currency(final_balance),
             net_result=net_result,
-            net_result_value=net_result_value,
+            net_result_value=float(net_result),
             net_result_display=Player.format_currency(net_result),
             eliminated_round=eliminated_round,
             rounds_played=summary_round,
@@ -705,4 +732,21 @@ class Summary(Page):
         )
 
 
-page_sequence = [Intro, BetPage, Decision, Dealer, Results, Summary]
+class End(Page):
+    @staticmethod
+    def is_displayed(player: Player):
+        return player.round_number == player.summary_round()
+
+    @staticmethod
+    def vars_for_template(player: Player):
+        participant = player.participant
+        participant.vars['finished'] = True
+        participant._index_in_pages = participant._max_page_index
+        participant._current_page_name = ''
+        participant._current_app_name = ''
+        participant._last_page_timestamp = int(time())
+        participant._update_monitor_table()
+        return {}
+
+
+page_sequence = [Intro, BetPage, Decision, Dealer, Results, Summary, End]

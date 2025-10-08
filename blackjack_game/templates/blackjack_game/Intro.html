@@ -5,44 +5,84 @@
   {{ super }}
   {% include 'blackjack_game/includes/continue_styles.html' %}
   <style>
-    .bj-rules-box {
-      border: 2px solid #111111;
-      border-radius: 16px;
-      padding: 20px 22px;
-      margin-top: 16px;
-      background: #ffffff;
+    body { background-color: #f5f7fb; }
+    .bj-intro-wrapper {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 64px 16px 72px;
     }
-    .bj-rules-box > ul {
+    .bj-intro-card {
+      background: #ffffff;
+      border-radius: 20px;
+      padding: 48px 40px;
+      box-shadow: 0 24px 40px rgba(15, 23, 42, 0.12);
+    }
+    .bj-intro-card h1 {
+      font-size: 30px;
+      font-weight: 600;
+      color: #1f2933;
+      margin-bottom: 18px;
+      text-align: center;
+    }
+    .bj-intro-card p {
+      font-size: 16px;
+      line-height: 1.7;
+      color: #4b5563;
+      margin-bottom: 20px;
+    }
+    .bj-rules-box {
+      border: 1px solid rgba(99, 102, 241, 0.25);
+      border-radius: 16px;
+      padding: 24px 26px;
+      background: rgba(255, 255, 255, 0.9);
+      box-shadow: 0 16px 30px rgba(15, 23, 42, 0.1);
+    }
+    .bj-rules-box ul {
+      padding-left: 1.1rem;
       margin-bottom: 0;
+      color: #374151;
+      line-height: 1.65;
+    }
+    .bj-rules-box ul ul {
+      margin-top: 0.4rem;
+      margin-bottom: 0.4rem;
+    }
+    .next-wrapper {
+      display: flex;
+      justify-content: center;
+      margin-top: 32px;
     }
   </style>
 {% endblock %}
 
 {% block content %}
-  <h2>Blackjack – Game Rules</h2>
-  <div class="bj-rules-box">
-  <ul>
-    <li>Your goal is to get as close as possible to 21 points without going over.</li>
-    <li>Number cards count at face value, face cards (J, Q, K) count 10, and Aces count as 1 or 11.</li>
-    <li>You start with two cards; the dealer also gets two, one of which is face down.</li>
-    <li>
-      You can choose to:
-      <ul>
-        <li>Hit – draw another card</li>
-        <li>Stand – keep your current hand</li>
-        <li>Double – double your bet and receive one final card</li>
-      </ul>
-    </li>
-    <li>If your total exceeds 21, you bust and lose immediately.</li>
-    <li>After your turn, the dealer reveals their hidden card and draws until reaching 17 or more.</li>
-    <li>A Blackjack (Ace + 10-value card) beats all other hands.</li>
-    <li>A regular win pays an amount equal to your bet.</li>
-    <li>A Blackjack pays 3 to 2.</li>
-    <li>If you and the dealer have the same total, it’s a push (no win or loss).</li>
-  </ul>
-  </div>
-
-  <div class="next-wrapper">
-    <button type="submit" class="otree-btn-next">Continue</button>
+  <div class="bj-intro-wrapper">
+    <div class="bj-intro-card">
+      <h1>Blackjack – Game Rules</h1>
+      <p>Below you will find a compact overview of the rules you will use during the Blackjack rounds.</p>
+      <div class="bj-rules-box">
+        <ul>
+          <li>Your goal is to reach a hand value as close as possible to 21 without going over.</li>
+          <li>Number cards count at face value, face cards (J, Q, K) count 10, and Aces count as 1 or 11.</li>
+          <li>You and the dealer each start with two cards; one of the dealer’s cards is hidden.</li>
+          <li>
+            On your turn you may:
+            <ul>
+              <li><strong>Hit</strong> – draw another card.</li>
+              <li><strong>Stand</strong> – keep your current hand.</li>
+              <li><strong>Double</strong> – double your bet and receive one final card.</li>
+            </ul>
+          </li>
+          <li>If your total exceeds 21, you bust and lose the round immediately.</li>
+          <li>After you stand (or bust), the dealer reveals the hidden card and draws until reaching at least 17.</li>
+          <li>An initial Ace plus any 10-value card is a Blackjack and beats all other hands.</li>
+          <li>A regular win pays an amount equal to your bet; a Blackjack pays 3 to 2.</li>
+          <li>If you and the dealer end up with the same total, the outcome is a push (no win or loss).</li>
+        </ul>
+      </div>
+      <div class="next-wrapper">
+        <button type="submit" class="otree-btn-next">Continue</button>
+      </div>
+    </div>
   </div>
 {% endblock %}

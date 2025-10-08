@@ -4,46 +4,143 @@
 {% block styles %}
   {{ super }}
   {% include 'blackjack_game/includes/continue_styles.html' %}
+  <style>
+    body { background-color: #f5f7fb; }
+    .bet-wrapper {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 48px 16px 64px;
+    }
+    .bet-card {
+      background: #ffffff;
+      border-radius: 20px;
+      padding: 40px 36px;
+      box-shadow: 0 20px 36px rgba(15, 23, 42, 0.12);
+    }
+    .bet-card h2 {
+      font-size: 26px;
+      font-weight: 600;
+      color: #1f2933;
+      margin-bottom: 18px;
+      text-align: center;
+    }
+    .bet-card p {
+      font-size: 16px;
+      color: #4b5563;
+      line-height: 1.6;
+      margin-bottom: 18px;
+    }
+    .bet-balance {
+      font-weight: 600;
+      color: #1f2933;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .bet-slider {
+      margin: 32px 0 12px;
+    }
+    .bet-slider input[type=range] {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 16px;
+      border-radius: 12px;
+      background: linear-gradient(90deg, #6366f1, #14b8a6);
+      outline: none;
+      box-shadow: inset 0 2px 6px rgba(15, 23, 42, 0.25);
+    }
+    .bet-slider input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #ffffff;
+      border: 3px solid rgba(99, 102, 241, 0.9);
+      box-shadow: 0 4px 10px rgba(15, 23, 42, 0.25);
+    }
+    .bet-slider input[type=range]::-moz-range-thumb {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #ffffff;
+      border: 3px solid rgba(99, 102, 241, 0.9);
+      box-shadow: 0 4px 10px rgba(15, 23, 42, 0.25);
+    }
+    .bet-values {
+      display: flex;
+      justify-content: space-between;
+      font-size: 14px;
+      color: #64748b;
+    }
+    .bet-selected {
+      text-align: center;
+      margin-top: 18px;
+      font-size: 18px;
+      font-weight: 600;
+      color: #1f2933;
+    }
+    .next-wrapper {
+      display: flex;
+      justify-content: center;
+      margin-top: 32px;
+    }
+  </style>
 {% endblock %}
 
 {% block content %}
-  <p><strong>Current balance:</strong> {{ balance_display }}</p>
-  <hr>
+  <div class="bet-wrapper">
+    <div class="bet-card">
+      <h2>Choose your bet</h2>
+      <p class="bet-balance">Current balance: {{ balance_display }}</p>
+      {% if show_bet_intro %}
+        <p>You start with {{ start_balance_display }} points. You may place bets in steps of {{ min_bet_display }}. If your balance ever drops below {{ min_bet_display }}, you can no longer continue and will exit the game early.</p>
+      {% else %}
+        <p>Adjust the slider below to choose your stake for this round. Bets are available in steps of {{ min_bet_display }}.</p>
+      {% endif %}
 
-  <h3>Choose your bet:</h3>
+      <div class="bet-slider">
+        <input type="range"
+               id="bet-slider"
+               min="{{ min_bet }}"
+               max="{{ max_bet }}"
+               step="{{ min_bet }}"
+               value="{{ current_bet }}">
+        <div class="bet-values">
+          <span>Min: {{ min_bet_display }}</span>
+          <span>Max: {{ balance_display }}</span>
+        </div>
+      </div>
 
-  {% if show_bet_intro %}
-    <p>Choose your stake for this round. You have a starting balance of {{ start_balance_display }} points. If you lose this balance before the end of the {{ total_rounds }} rounds, you will be eliminated from the game.</p>
-  {% endif %}
+      <div class="bet-selected">Selected bet: <span id="betValue">{{ current_bet }}</span></div>
 
-  {{ formfield 'bet_size' label="" }}
+      <input type="hidden" name="bet_size" id="betInput" value="{{ current_bet }}">
 
-  <p>Selected bet: <span id="betValue"></span></p>
-
-  <div class="next-wrapper">
-    <button type="submit" class="otree-btn-next">Continue</button>
+      <div class="next-wrapper">
+        <button type="submit" class="otree-btn-next">Continue</button>
+      </div>
+    </div>
   </div>
 
   <script>
-    document.addEventListener("DOMContentLoaded", function () {
-      const input = document.querySelector("input[name='bet_size']");
-      const out = document.getElementById("betValue");
-      if (input && out) {
-        out.textContent = input.value;
-        input.addEventListener("input", function () {
-          this.setCustomValidity('');
-          out.textContent = this.value;
-        });
-        input.addEventListener("invalid", function () {
-          this.setCustomValidity('Please enter a valid bet.');
-        });
-      }
+    document.addEventListener('DOMContentLoaded', function(){
+      const slider = document.getElementById('bet-slider');
+      const hiddenInput = document.getElementById('betInput');
+      const displayValue = document.getElementById('betValue');
 
-      document.querySelectorAll('.input-group-text').forEach(function (el) {
-        const value = el.textContent ? el.textContent.trim().toLowerCase() : '';
-        if (value === 'points' || value === 'punkte' || value === '') {
-          el.textContent = 'Points';
-        }
+      if(!slider || !hiddenInput || !displayValue){ return; }
+
+      const formatValue = (val) => {
+        return parseInt(val, 10);
+      };
+
+      const syncValues = (val) => {
+        hiddenInput.value = val;
+        displayValue.textContent = formatValue(val);
+      };
+
+      syncValues(slider.value);
+
+      slider.addEventListener('input', function(){
+        syncValues(this.value);
       });
     });
   </script>
