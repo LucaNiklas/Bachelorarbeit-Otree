@@ -42,8 +42,9 @@ ROOMS = [
 
 # Admin-Bereich
 
-ADMIN_USERNAME = 'admin'
-ADMIN_PASSWORD = environ.get('BlackJackPW')
+ADMIN_USERNAME = environ.get('OTREE_ADMIN_USERNAME', 'admin')
+ADMIN_PASSWORD = environ.get('OTREE_ADMIN_PASSWORD')  
+AUTH_LEVEL = environ.get('OTREE_AUTH_LEVEL', 'STUDY')
 
 DEMO_PAGE_INTRO_HTML = """
 <h3>oTree Demos</h3>
