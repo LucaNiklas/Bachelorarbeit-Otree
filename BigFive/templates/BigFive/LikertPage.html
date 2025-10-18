@@ -65,10 +65,50 @@
     }
     .progress { margin-top: 16px; font-size: 13px; text-align: center; color: var(--text-muted); }
 
-    @media (max-width: 640px) {
+    @media (max-width: 768px) {
         .statement { font-size: 16px; }
-        .scale { gap: 8px; }
-        .scale-option { flex: 1 1 100px; }
+        .scale {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            grid-template-areas:
+                "neg-top neutral pos-top"
+                "neg-bottom neutral pos-bottom";
+            gap: 12px;
+        }
+        .scale-option {
+            flex: unset;
+            justify-self: center;
+        }
+        .scale-option.strongly-disagree {
+            grid-area: neg-top;
+            justify-self: start;
+            text-align: left;
+            align-items: flex-start;
+        }
+        .scale-option.disagree {
+            grid-area: neg-bottom;
+            justify-self: start;
+            text-align: left;
+            align-items: flex-start;
+        }
+        .scale-option.neutral {
+            grid-area: neutral;
+            align-self: center;
+            justify-self: center;
+            align-items: center;
+        }
+        .scale-option.agree {
+            grid-area: pos-top;
+            justify-self: end;
+            text-align: right;
+            align-items: flex-end;
+        }
+        .scale-option.strongly-agree {
+            grid-area: pos-bottom;
+            justify-self: end;
+            text-align: right;
+            align-items: flex-end;
+        }
     }
 </style>
 {% endblock %}

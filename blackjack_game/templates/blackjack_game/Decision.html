@@ -430,7 +430,6 @@
         nextWrapper.style.display = 'flex';
         if(nextBtn){ nextBtn.focus(); }
       }
-      // Manche Mobile-Browser blocken programmatische Clicks; nicht kritisch dank Fallback.
       setTimeout(function(){ if(nextBtn){ nextBtn.click(); } }, 150);
     } else if(nextWrapper){
       nextWrapper.style.display = 'none';

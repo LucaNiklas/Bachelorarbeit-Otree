@@ -167,6 +167,7 @@ class Player(BasePlayer):
         'Fairly familiar',
         'Very familiar',
     ], blank=True)
+    email = models.StringField(blank=True)
     q1 = models.IntegerField(choices=[1, 2, 3, 4, 5])
     q2 = models.IntegerField(choices=[1, 2, 3, 4, 5])
     q3 = models.IntegerField(choices=[1, 2, 3, 4, 5])
@@ -201,9 +202,8 @@ class Intro(Page):
 
 class Demographics(Page):
     form_model = 'player'
-    form_fields = ['age', 'gender', 'education', 'blackjack_familiarity']
+    form_fields = ['age', 'gender', 'education', 'blackjack_familiarity', 'email']
     template_name = 'BigFive/Demographics.html'
-
 
 class PageOne(Page):
     form_model = 'player'
@@ -261,6 +261,5 @@ class PageFive(Page):
 
 class Transition(Page):
     template_name = 'BigFive/Transition.html'
-
 
 page_sequence = [Intro, Demographics, PageOne, PageTwo, PageThree, PageFour, PageFive, Transition]

@@ -50,7 +50,7 @@ DEMO_PAGE_INTRO_HTML = """
 <p>Wähle eine Session, um zu starten.</p>
 """
 
-SECRET_KEY = 'replace-this-with-a-random-secret-key'
+SECRET_KEY = 'secret-key'
 
 
 INSTALLED_APPS = ['otree']
