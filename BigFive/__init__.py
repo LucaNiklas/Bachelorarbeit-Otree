@@ -1,5 +1,3 @@
-from django.core.exceptions import ValidationError
-from django.core.validators import validate_email
 from otree.api import *
 
 
@@ -206,18 +204,6 @@ class Demographics(Page):
     form_model = 'player'
     form_fields = ['age', 'gender', 'education', 'blackjack_familiarity', 'email']
     template_name = 'BigFive/Demographics.html'
-
-    @staticmethod
-    def error_message(player: Player, values):
-        email = (values.get('email') or '').strip()
-        if email:
-            try:
-                validate_email(email)
-            except ValidationError:
-                return dict(email='Please enter a valid email address or leave the email field blank.')
-        # normalize email so spaces are stripped even when valid
-        values['email'] = email
-        player.email = email or ''
 
 class PageOne(Page):
     form_model = 'player'
