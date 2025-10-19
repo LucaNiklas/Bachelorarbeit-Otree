@@ -1,3 +1,5 @@
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
 from otree.api import *
 
 
@@ -148,7 +150,7 @@ class Group(BaseGroup):
 
 
 class Player(BasePlayer):
-    age = models.IntegerField(min=16, max=99, blank=True)
+    age = models.IntegerField(min=12, max=99, blank=True)
     gender = models.StringField(choices=['Female', 'Male', 'Non-binary'], blank=True)
     education = models.StringField(choices=[
         'No formal education',
@@ -156,8 +158,8 @@ class Player(BasePlayer):
         'Intermediate secondary school (Realschule / Mittlere Reife)',
         'Upper secondary school (Abitur / Gymnasium)',
         'Vocational training / apprenticeship (Ausbildung)',
-        'Bachelor’s degree',
-        'Master’s degree',
+        "Bachelor's degree",
+        "Master's degree",
         'Doctorate / PhD',
         'Other',
     ], blank=True)
@@ -204,6 +206,18 @@ class Demographics(Page):
     form_model = 'player'
     form_fields = ['age', 'gender', 'education', 'blackjack_familiarity', 'email']
     template_name = 'BigFive/Demographics.html'
+
+    @staticmethod
+    def error_message(player: Player, values):
+        email = (values.get('email') or '').strip()
+        if email:
+            try:
+                validate_email(email)
+            except ValidationError:
+                return dict(email='Please enter a valid email address or leave the email field blank.')
+        # normalize email so spaces are stripped even when valid
+        values['email'] = email
+        player.email = email or ''
 
 class PageOne(Page):
     form_model = 'player'
