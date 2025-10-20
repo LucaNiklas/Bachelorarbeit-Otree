@@ -714,8 +714,18 @@ class Results(Page):
         if player.balance < Constants.MIN_BET and 'summary_round' not in player.participant.vars:
             player.participant.vars['summary_round'] = player.round_number
         if player.round_number < Constants.num_rounds:
-            next_player = player.in_round(player.round_number + 1)
-            next_player.balance = player.balance
+            summary_round = player.participant.vars.get('summary_round')
+            eliminated_now = summary_round == player.round_number if summary_round else False
+            next_balance = cu(0) if eliminated_now else player.balance
+
+            if eliminated_now:
+                end_round = Constants.num_rounds
+            else:
+                end_round = player.round_number + 1
+
+            for round_no in range(player.round_number + 1, end_round + 1):
+                future_player = player.in_round(round_no)
+                future_player.balance = next_balance
 
 class Summary(Page):
     @staticmethod
