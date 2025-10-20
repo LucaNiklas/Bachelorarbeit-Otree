@@ -413,11 +413,20 @@ class Player(BasePlayer):
 
 class Subsession(BaseSubsession):
     def creating_session(self):
+        players = self.get_players()
         if self.round_number == 1:
-            for p in self.get_players():
+            for p in players:
                 p.participant.vars.pop('summary_round', None)
                 p.balance = Constants.START_BALANCE
                 p.participant.vars['blackjack_shoe'] = p._new_deck()
+        else:
+            for p in players:
+                prev_round = p.in_round(self.round_number - 1)
+                summary_round = p.participant.vars.get('summary_round', Constants.num_rounds)
+                if summary_round and self.round_number > summary_round:
+                    p.balance = cu(0)
+                else:
+                    p.balance = prev_round.balance
 
 # -------------------- Seiten --------------------
 
