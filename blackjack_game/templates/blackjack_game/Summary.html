@@ -85,6 +85,10 @@
       font-style: italic;
       margin-top: 8px;
     }
+    .raffle-note.warning {
+      color: #dc2626;
+      font-style: normal;
+    }
   </style>
 {% endblock %}
 
@@ -114,6 +118,10 @@
           <span class="summary-stat__value">{{ rounds_played }} / {{ total_rounds }}</span>
         </div>
       </div>
+
+      {% if not show_email_field %}
+        <p class="raffle-note warning">Your final balance fell below the required minimum, so you are not eligible for the raffle.</p>
+      {% endif %}
 
       {% if show_email_field %}
         <div class="summary-email">
