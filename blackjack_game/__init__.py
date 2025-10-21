@@ -101,6 +101,7 @@ class Player(BasePlayer):
     final_player_ranks_csv = models.LongStringField(blank=True)
     final_dealer_ranks_csv = models.LongStringField(blank=True)
     bankroll_after_round = models.CurrencyField(blank=True)
+    email = models.StringField(blank=True)
 
     def summary_round(self):
         return self.participant.vars.get('summary_round', Constants.num_rounds)
@@ -728,16 +729,33 @@ class Results(Page):
                 future_player.balance = next_balance
 
 class Summary(Page):
+    form_model = 'player'
+
+    @staticmethod
+    def get_form_fields(player: Player):
+        final_balance = player.balance
+        summary_round = player.summary_round()
+        eliminated_round = summary_round if (final_balance < Constants.MIN_BET or summary_round < Constants.num_rounds) else None
+        show_email = eliminated_round is None and summary_round == Constants.num_rounds
+        return ['email'] if show_email else []
+
     @staticmethod
     def is_displayed(player: Player):
         return player.round_number == player.summary_round()
 
     @staticmethod
     def vars_for_template(player: Player):
+        current_email = player.field_maybe_none('email') or ''
+        stored_email = current_email or player.participant.vars.get('raffle_email', '')
+        if not current_email and stored_email:
+            player.email = stored_email
+            current_email = stored_email
+
         final_balance = player.balance
         net_result = final_balance - Constants.START_BALANCE
         summary_round = player.summary_round()
         eliminated_round = summary_round if (final_balance < Constants.MIN_BET or summary_round < Constants.num_rounds) else None
+        show_email_field = eliminated_round is None and summary_round == Constants.num_rounds
         return dict(
             final_balance=final_balance,
             final_balance_value=float(final_balance),
@@ -748,7 +766,29 @@ class Summary(Page):
             eliminated_round=eliminated_round,
             rounds_played=summary_round,
             total_rounds=Constants.num_rounds,
+            email_value=current_email,
+            show_email_field=show_email_field,
         )
+
+    @staticmethod
+    def before_next_page(player: Player, timeout_happened):
+        email = (player.field_maybe_none('email') or '').strip()
+        player.email = email
+        if email:
+            player.participant.vars['raffle_email'] = email
+        else:
+            player.participant.vars.pop('raffle_email', None)
+
+        try:
+            bigfive_player = next(
+                (p for p in player.participant.get_players() if p.__class__.__module__.startswith('BigFive')),
+                None,
+            )
+        except Exception:
+            bigfive_player = None
+
+        if bigfive_player is not None:
+            bigfive_player.email = email
 
 
 class End(Page):

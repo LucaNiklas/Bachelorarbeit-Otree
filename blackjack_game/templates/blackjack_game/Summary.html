@@ -55,6 +55,36 @@
       color: #1f2933;
       font-size: 1rem;
     }
+    .summary-email {
+      margin-top: 28px;
+      text-align: left;
+    }
+    .summary-email label {
+      display: block;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 8px;
+    }
+    .summary-email input {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid #d1d5db;
+      border-radius: 12px;
+      font-size: 15px;
+      color: #1f2933;
+      background-color: #fff;
+    }
+    .summary-email input:focus {
+      outline: none;
+      border-color: #6366f1;
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+    }
+    .raffle-note {
+      font-size: 13px;
+      color: #6b7280;
+      font-style: italic;
+      margin-top: 8px;
+    }
   </style>
 {% endblock %}
 
@@ -85,7 +115,13 @@
         </div>
       </div>
 
-      <p>If you shared your email address and win the 150€ prize, we will get in touch with you about the payout.</p>
+      {% if show_email_field %}
+        <div class="summary-email">
+          <label for="id_email">Email (optional)</label>
+          <input id="id_email" type="email" name="email" placeholder="your.email@example.com" value="{{ email_value }}">
+          <p class="raffle-note"><strong>Important:</strong> If you wish to participate in the raffle, we need your email address so we can contact you. All email addresses will be deleted once the raffle is complete.</p>
+        </div>
+      {% endif %}
 
       <div class="next-wrapper">
         <button type="submit" class="otree-btn-next">Finish</button>

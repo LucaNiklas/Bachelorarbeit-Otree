@@ -202,7 +202,7 @@ class Intro(Page):
 
 class Demographics(Page):
     form_model = 'player'
-    form_fields = ['age', 'gender', 'education', 'blackjack_familiarity', 'email']
+    form_fields = ['age', 'gender', 'education', 'blackjack_familiarity']
     template_name = 'BigFive/Demographics.html'
 
 class PageOne(Page):
